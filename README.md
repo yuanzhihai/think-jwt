@@ -71,7 +71,7 @@ return [
      * jwt使用到的缓存前缀
      * 建议使用独立的redis做缓存，这样比较好做分布式
      */
-    'cache_prefix' => 'yzh52521:think-jwt',
+    'cache_prefix' => 'think-jwt',
 
     /**
      * 是否开启黑名单，单点登录和多点登录的注销、刷新使原token失效，必须要开启黑名单，目前黑名单缓存只支持thinkphp缓存驱动

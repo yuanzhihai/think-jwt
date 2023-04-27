@@ -293,7 +293,7 @@ class JWT extends AbstractJWT
              */
             $tokenCacheTime = $this->getTokenCacheTime( $claims );
             if ($tokenCacheTime > 0) {
-                return $this->cache->set(
+                return $this->cache->tag('think-jwt')->set(
                     $cacheKey,
                     ['valid_until' => $validUntil],
                     $tokenCacheTime
@@ -386,8 +386,7 @@ class JWT extends AbstractJWT
      */
     public function clear()
     {
-        $sceneConfig = $this->jwtConfig[$this->getScene()];
-        return $this->cache->tag( $sceneConfig['cache_prefix'] )->clear();
+        return $this->cache->tag('think-jwt')->clear();
     }
 
     /**
