@@ -247,7 +247,6 @@ class JWT extends AbstractJWT
             if ($cacheValue == null) {
                 return true;
             }
-            $cacheValue = unserialize( $cacheValue );
             if ($sceneConfig['login_type'] == JWTConstant::MPOP) {
                 return !empty( $cacheValue['valid_until'] ) && !TimeUtil::isFuture( $cacheValue['valid_until'] );
             }
