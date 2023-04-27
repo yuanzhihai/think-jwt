@@ -205,7 +205,7 @@ class JWT extends AbstractJWT
 
         // 验证token是否存在黑名单
         if ($this->hasTokenBlack( $token )) {
-            throw new TokenValidException( 'Token authentication does not pass',400 );
+            throw new TokenValidException( 'Token authentication has expired',400 );
         }
 
         return true;
