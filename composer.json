@@ -20,7 +20,7 @@
   "extra": {
     "think": {
       "config":{
-        "jwt": "config/jwt.php"
+        "jwt": "src/config/jwt.php"
       }
     }
   }
