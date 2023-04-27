@@ -1,7 +1,6 @@
 {
   "name": "yzh52521/think-jwt",
-  "minimum-stability": "stable",
-  "license": "proprietary",
+  "license": "MIT",
   "authors": [
     {
       "name": "yuanzhihai",
@@ -16,6 +15,13 @@
   "autoload": {
     "psr-4": {
       "yzh52521\\Jwt\\": "src"
+    }
+  },
+  "extra": {
+    "think": {
+      "config":{
+        "jwt": "config/jwt.php"
+      }
     }
   }
 }
