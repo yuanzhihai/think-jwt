@@ -56,7 +56,7 @@ class JWT extends AbstractJWT
     /**
      * @var Request
      */
-    public $request;
+    public Request $request;
 
     /**
      * @var mixed|CacheInterface
@@ -82,8 +82,8 @@ class JWT extends AbstractJWT
             $sceneConfig           = array_merge( $config,$scene );
             $this->jwtConfig[$key] = $sceneConfig;
         }
-        $this->request = Request::class;
-        $this->cache   = Cache::class;
+        $this->cache   = app( 'cache' );
+        $this->request = app( 'request' );
     }
 
     /**
