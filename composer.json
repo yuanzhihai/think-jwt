@@ -8,6 +8,7 @@
       "email": "396751927@qq.com"
     }
   ],
+  "homepage": "https://github.com/yzh52521/think-jwt",
   "require": {
     "php": ">=8.0.0",
     "lcobucci/jwt": "^4.2.1 || ^5.0",
@@ -19,6 +20,7 @@
       "yzh52521\\Jwt\\": "src"
     }
   },
+  "minimum-stability": "dev",
   "extra": {
     "think": {
       "config":{
