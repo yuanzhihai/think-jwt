@@ -76,11 +76,10 @@ class JWT extends AbstractJWT
 
     public function __construct()
     {
-        $config    = config( 'jwt' );
-        $jwtConfig = $config[JWTConstant::CONFIG_NAME];
-        $scenes    = $jwtConfig['scene'];
+        $config = config( 'jwt' );
+        $scenes = $config['scene'];
         foreach ( $scenes as $key => $scene ) {
-            $sceneConfig           = array_merge( $jwtConfig,$scene );
+            $sceneConfig           = array_merge( $config,$scene );
             $this->jwtConfig[$key] = $sceneConfig;
         }
         $this->request = Request::class;
@@ -526,7 +525,7 @@ class JWT extends AbstractJWT
         return new $this->supportAlgs[$alg];
     }
 
-    protected function buildConfig(): Configuration
+    protected function buildConfig()
     {
         $jwtSceneConfig = $this->getJwtSceneConfig();
         if (!$this->isAsymmetric()) {
