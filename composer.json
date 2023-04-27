@@ -10,7 +10,6 @@
   ],
   "require": {
     "php": ">=8.0.0",
-    "topthink/framework": "^6.1",
     "lcobucci/jwt": "^4.2.1 || ^5.0",
     "nesbot/carbon": "^2.0"
   },
