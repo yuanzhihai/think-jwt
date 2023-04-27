@@ -9,5 +9,4 @@ interface JWTConstant
 
     public const SSO = 'sso';
 
-    public const CONFIG_NAME = "jwt";
 }
