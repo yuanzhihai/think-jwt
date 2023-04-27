@@ -2,21 +2,19 @@
 
 namespace yzh52521\Jwt\Middleware;
 
-use Webman\Http\Response;
-use Webman\Http\Request;
-use Webman\MiddlewareInterface;
+use think\Request;
 use yzh52521\Jwt\Exception\TokenValidException;
 use yzh52521\Jwt\JWT;
 use yzh52521\Jwt\Util\JWTUtil;
 
-class JWTAuthMiddleware implements MiddlewareInterface
+class JWTAuthMiddleware
 {
 
     public function __construct(protected JWT $jwt)
     {
     }
 
-    public function process(Request $request,callable $next): Response
+    public function process(Request $request,callable $next)
     {
         $token = JWTUtil::getToken( $request );
         if ($token !== false && $this->jwt->verifyToken( $token )) {
