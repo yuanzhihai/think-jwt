@@ -1,5 +1,6 @@
 {
   "name": "yzh52521/think-jwt",
+  "description": "JSON Web Token (JWT) for Thinkphp plugin",
   "license": "MIT",
   "authors": [
     {
