@@ -14,7 +14,7 @@ class JWTAuthMiddleware
     {
     }
 
-    public function process(Request $request,callable $next)
+    public function process(Request $request,$next)
     {
         $token = JWTUtil::getToken( $request );
         if ($token !== false && $this->jwt->verifyToken( $token )) {
