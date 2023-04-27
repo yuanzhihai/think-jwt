@@ -62,7 +62,7 @@ return [
             'login_type' => 'mpop',      //  登录方式，sso为单点登录，mpop为多点登录
             'sso_key'    => 'uid',
             'ttl'        => 7200,        // token过期时间，单位为秒
-            'user_model' => function () { //用户模型
+            'user_model' => function () { //用户模型 为一个匿名函数，默认返回空数组，可以根据自己定制返回模型
                 return [];
             },
         ],
@@ -71,7 +71,7 @@ return [
             'login_type' => 'sso',        //  登录方式，sso为单点登录，mpop为多点登录
             'sso_key'    => 'uid',
             'ttl'        => 7200,          // token过期时间，单位为秒
-            'user_model' => function () {  //用户模型
+            'user_model' => function () {  //用户模型 为一个匿名函数，默认返回空数组，可以根据自己定制返回模型
                 return [];
             },
         ]

@@ -116,14 +116,12 @@ return [
 ];
 ```
 
-##### 全局路由验证
+##### 全局路由验证 app/middleware.php
 
 ```shell
 <?php
 return [
-    '' => [
-        yzh52521\Jwt\Middleware\JWTAuthDefaultSceneMiddleware:class
-    ],
+     yzh52521\Jwt\Middleware\JWTAuthDefaultSceneMiddleware:class,
 ];
 ```
 
@@ -166,7 +164,7 @@ class Index
                 'msg' => 'success',
                 'data' => [
                     'token' => $token->toString(),
-                    'exp' => $jwt->getTTL($token->toString()),
+                    'expires_in' => $jwt->getTTL($token->toString()),
                 ]
             ];
             return json($data);
@@ -191,7 +189,7 @@ Route::post('/login', 'index/login');
 
 # 获取数据
 Route::group('/v1', function () {
-    Router::get('/getToken', 'index/getToken');
+    Route::get('/getToken', 'index/getToken');
 })->middleware(yzh52521\Jwt\Middleware\JWTAuthDefaultSceneMiddleware::class);
 ```
 
@@ -274,7 +272,7 @@ class Index
                 'msg' => 'success',
                 'data' => [
                     'token' => $token->toString(),
-                    'exp' => $this->jwt->getTTL($token->toString()),
+                    'expires_in' => $this->jwt->getTTL($token->toString()),
                 ]
             ];
             return json($data);
@@ -303,7 +301,7 @@ class Index
                 'data' => [
                     [
                         'token' => $token->toString(),
-                        'exp' => $this->jwt->getTTL($token1->toString()),
+                        'expires_in' => $this->jwt->getTTL($token1->toString()),
                         'dynamic_exp' => $this->jwt->getTokenDynamicCacheTime($token->toString())
                     ]
                 ]
@@ -328,7 +326,7 @@ class Index
             'msg' => 'success',
             'data' => [
                 'token' => $token->toString(),
-                'exp' => $this->jwt->getTTL($token->toString()),
+                'expires_in' => $this->jwt->getTTL($token->toString()),
             ]
         ];
         return json($data);
@@ -346,7 +344,7 @@ class Index
             'msg' => 'success',
             'data' => [
                 'token' => $token->toString(),
-                'exp' => $this->jwt->getTTL($token->toString()),
+                'expires_in' => $this->jwt->getTTL($token->toString()),
             ]
         ];
         return json($data);
@@ -410,6 +408,16 @@ class Index
 
 ```
 
+#### user_model 用户模型 
+```php
+'user_model' => function($uid) {
+    return \think\facade\Db::table('user')
+        ->field('id,username,create_time')
+        ->where('id',$uid)
+        ->find();
+}
+```
+
 ##### 获取解析后的 token 数据
 
 提供了一个 `getParserData` 来获取解析后的 token 数据。
@@ -417,13 +425,16 @@ class Index
 
 ##### 如何支持每个场景生成的token不能互相访问各个应用
 
-具体你可以查看yzh52521\Jwt\Middleware\JWTAuthSceneDefaultMiddleware和yzh52521\Jwt\Middleware\JWTAuthSceneAppMiddleware这两个中间件，根据这两个中间件你可以编写自己的中间件来支持每个场景生成的token不能互相访问各个应用
+具体你可以查看
+yzh52521\Jwt\Middleware\JWTAuthSceneDefaultMiddleware
+yzh52521\Jwt\Middleware\JWTAuthSceneAppMiddleware
+这两个中间件，根据这两个中间件你可以编写自己的中间件来支持每个场景生成的token不能互相访问各个应用
 
 ##### 建议
 
 > 目前 `jwt` 抛出的异常目前有两种类型
 > `yzh52521\Jwt\Exception\TokenValidException`、    
-> `yzh52521\Jwt\Exception\JWTException,TokenValidException`  
+> `yzh52521\Jwt\Exception\JWTException`  
 > 异常为 `TokenValidException` 验证失败的异常，会抛出 `401` ,   
 > `JWTException` 异常会抛出 `400`，   
 > 最好你们自己在项目异常重新返回错误信息
