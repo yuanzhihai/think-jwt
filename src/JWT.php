@@ -431,7 +431,7 @@ class JWT extends AbstractJWT
 
         try {
             return JWTUtil::getParser()->parse( $token );
-        } catch ( JWTException $e ) {
+        } catch ( \Exception $e ) {
             throw new JWTException( 'Jwt token interpretation error. Please provide the correct jwt token and parse the error information: '.$e->getMessage(),400 );
         }
     }
