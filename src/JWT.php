@@ -1,5 +1,5 @@
 <?php
-declare( strict_types = 1 );
+declare(strict_types=1);
 
 namespace yzh52521\Jwt;
 
@@ -76,14 +76,14 @@ class JWT extends AbstractJWT
 
     public function __construct()
     {
-        $config = config( 'jwt' );
+        $config = config('jwt');
         $scenes = $config['scene'];
-        foreach ( $scenes as $key => $scene ) {
-            $sceneConfig           = array_merge( $config,$scene );
+        foreach ($scenes as $key => $scene) {
+            $sceneConfig           = array_merge($config, $scene);
             $this->jwtConfig[$key] = $sceneConfig;
         }
-        $this->cache   = app( 'cache' );
-        $this->request = app( 'request' );
+        $this->cache   = app('cache');
+        $this->request = app('request');
     }
 
     /**
@@ -92,10 +92,10 @@ class JWT extends AbstractJWT
      */
     protected function initConfiguration(string $scene)
     {
-        $this->setScene( $scene );
-        $jwtSceneConfig = $this->getJwtSceneConfig( $scene );
-        if (empty( $jwtSceneConfig )) {
-            throw new JWTException( "The jwt scene [{$this->getScene()}] not found",400 );
+        $this->setScene($scene);
+        $jwtSceneConfig = $this->getJwtSceneConfig($scene);
+        if (empty($jwtSceneConfig)) {
+            throw new JWTException("The jwt scene [{$this->getScene()}] not found", 400);
         }
         $this->buildConfig();
         return $this;
@@ -108,10 +108,10 @@ class JWT extends AbstractJWT
      * @return Token|string
      * @throws \Psr\SimpleCache\InvalidArgumentException
      */
-    public function getToken(string $scene,array $claims): Plain
+    public function getToken(string $scene, array $claims): Plain
     {
         // 初始化lcobucci jwt config
-        $this->initConfiguration( $scene );
+        $this->initConfiguration($scene);
         $claims[$this->jwtClaimScene] = $scene; // 加入场景值
 
         $jwtSceneConfig = $this->getJwtSceneConfig();
@@ -119,57 +119,57 @@ class JWT extends AbstractJWT
         $ssoKey         = $jwtSceneConfig['sso_key'];
         $issuedBy       = $jwtSceneConfig[RegisteredClaims::ISSUER] ?? 'think-jwt';
         if ($loginType == JWTConstant::MPOP) { // 多点登录,场景值加上一个唯一id
-            $uniqid = uniqid( $this->getScene().':',true );
+            $uniqid = uniqid($this->getScene() . ':', true);
         } else { // 单点登录
-            if (empty( $claims[$ssoKey] )) {
-                throw new JWTException( "There is no {$ssoKey} key in the claims",400 );
+            if (empty($claims[$ssoKey])) {
+                throw new JWTException("There is no {$ssoKey} key in the claims", 400);
             }
-            $uniqid = $this->getScene().":".$claims[$ssoKey];
+            $uniqid = $this->getScene() . ":" . $claims[$ssoKey];
         }
 
-        $clock     = SystemClock::fromUTC();
+        $clock     = SystemClock::fromSystemTimezone();
         $now       = $clock->now();
-        $expiresAt = $this->getExpiryDateTime( $now,$jwtSceneConfig['ttl'] );
-        $builder   = $this->lcobucciJwtConfiguration->builder( ChainedFormatter::withUnixTimestampDates() )->issuedBy( $issuedBy );
-        foreach ( $claims as $k => $v ) {
+        $expiresAt = $this->getExpiryDateTime($now, $jwtSceneConfig['ttl']);
+        $builder   = $this->lcobucciJwtConfiguration->builder(ChainedFormatter::withUnixTimestampDates())->issuedBy($issuedBy);
+        foreach ($claims as $k => $v) {
             if ($k == RegisteredClaims::SUBJECT) {
-                $builder = $builder->relatedTo( $v );
+                $builder = $builder->relatedTo($v);
                 continue;
             }
             if ($k == RegisteredClaims::AUDIENCE) {
-                if (!is_array( $v )) {
-                    throw new JWTException( "Aud only supports array types",400 );
+                if (!is_array($v)) {
+                    throw new JWTException("Aud only supports array types", 400);
                 }
-                $builder = $builder->PermittedFor( ...$v );
+                $builder = $builder->PermittedFor(...$v);
                 continue;
             }
             if ($k == RegisteredClaims::ISSUER) {
-                $builder = $builder->issuedBy( $v );
+                $builder = $builder->issuedBy($v);
                 continue;
             }
-            $builder = $builder->withClaim( $k,$v ); // 自定义数据
+            $builder = $builder->withClaim($k, $v); // 自定义数据
         }
         $builder = $builder
             // Configures the id (jti claim) 设置jwt的jti
-            ->identifiedBy( $uniqid )
+            ->identifiedBy($uniqid)
             // Configures the time that the token was issue (iat claim) 发布时间
-            ->issuedAt( $now )
+            ->issuedAt($now)
             // Configures the time that the token can be used (nbf claim) 在此之前不可用
-            ->canOnlyBeUsedAfter( $now )
+            ->canOnlyBeUsedAfter($now)
             // Configures the expiration time of the token (exp claim) 到期时间
-            ->expiresAt( $expiresAt );
+            ->expiresAt($expiresAt);
 
 
-        $token = $builder->getToken( $this->lcobucciJwtConfiguration->signer(),$this->lcobucciJwtConfiguration->signingKey() );
+        $token = $builder->getToken($this->lcobucciJwtConfiguration->signer(), $this->lcobucciJwtConfiguration->signingKey());
         if ($loginType == JWTConstant::SSO) {
-            $this->addTokenBlack( $token );
+            $this->addTokenBlack($token, true);
         }
         return $token;
     }
 
-    protected function getExpiryDateTime($now,$ttl): DateTimeImmutable
+    protected function getExpiryDateTime($now, $ttl): DateTimeImmutable
     {
-        return $now->modify( "+{$ttl} second" );
+        return $now->modify("+{$ttl} second");
     }
 
     /**
@@ -192,20 +192,20 @@ class JWT extends AbstractJWT
     public function verifyToken(string $token): bool
     {
         if ($token == null) {
-            $token = JWTUtil::getToken( $this->request );
+            $token = JWTUtil::getToken($this->request);
         }
 
-        $token = $this->tokenToPlain( $token );
-        $this->initConfiguration( $this->getSceneByTokenPlain( $token ) );
+        $token = $this->tokenToPlain($token);
+        $this->initConfiguration($this->getSceneByTokenPlain($token));
 
-        $constraints = $this->validationConstraints( $token->claims(),$this->lcobucciJwtConfiguration );
-        if (!$this->lcobucciJwtConfiguration->validator()->validate( $token,...$constraints )) {
-            throw new TokenValidException( 'Token authentication does not pass',400 );
+        $constraints = $this->validationConstraints($token->claims(), $this->lcobucciJwtConfiguration);
+        if (!$this->lcobucciJwtConfiguration->validator()->validate($token, ...$constraints)) {
+            throw new TokenValidException('Token authentication does not pass', 400);
         }
 
         // 验证token是否存在黑名单
-        if ($this->hasTokenBlack( $token )) {
-            throw new TokenValidException( 'Token authentication has expired',400 );
+        if ($this->hasTokenBlack($token)) {
+            throw new TokenValidException('Token authentication has expired', 400);
         }
 
         return true;
@@ -216,18 +216,18 @@ class JWT extends AbstractJWT
      * @param string $token
      * @return bool
      */
-    public function verifyTokenAndScene(string $scene,string $token): bool
+    public function verifyTokenAndScene(string $scene, string $token): bool
     {
         if ($token == null) {
-            $token = JWTUtil::getToken( $this->request );
+            $token = JWTUtil::getToken($this->request);
         }
-        $plainToken = $this->tokenToPlain( $token );
-        $tokenScene = $this->getSceneByTokenPlain( $plainToken );
+        $plainToken = $this->tokenToPlain($token);
+        $tokenScene = $this->getSceneByTokenPlain($plainToken);
         if ($scene != $tokenScene) {
-            throw new JWTException( 'The token does not support the current scene',400 );
+            throw new JWTException('The token does not support the current scene', 400);
         }
 
-        return $this->verifyToken( $token );
+        return $this->verifyToken($token);
     }
 
 
@@ -239,22 +239,22 @@ class JWT extends AbstractJWT
      */
     public function hasTokenBlack(Plain $token): bool
     {
-        $sceneConfig = $this->getSceneConfigByToken( $token );
+        $sceneConfig = $this->getSceneConfigByToken($token);
         if ($sceneConfig['blacklist_enabled']) {
             $claims     = $token->claims();
-            $cacheKey   = $this->getCacheKey( $sceneConfig,$claims->get( RegisteredClaims::ID ) );
-            $cacheValue = $this->cache->get( $cacheKey );
+            $cacheKey   = $this->getCacheKey($sceneConfig, $claims->get(RegisteredClaims::ID));
+            $cacheValue = $this->cache->get($cacheKey);
             if ($cacheValue == null) {
                 return true;
             }
             if ($sceneConfig['login_type'] == JWTConstant::MPOP) {
-                return !empty( $cacheValue['valid_until'] ) && !TimeUtil::isFuture( $cacheValue['valid_until'] );
+                return !empty($cacheValue['valid_until']) && !TimeUtil::isFuture($cacheValue['valid_until']);
             }
 
             if ($sceneConfig['login_type'] == JWTConstant::SSO) {
                 // 签发时间
-                $iatTime = TimeUtil::getCarbonTimeByTokenTime( $claims->get( RegisteredClaims::ISSUED_AT ) )->getTimestamp();
-                if (!empty( $cacheValue['valid_until'] ) && !empty( $iatTime )) {
+                $iatTime = TimeUtil::getCarbonTimeByTokenTime($claims->get(RegisteredClaims::ISSUED_AT))->getTimestamp();
+                if (!empty($cacheValue['valid_until']) && !empty($iatTime)) {
                     // 当前token的签发时间小于等于缓存的签发时间，则证明当前token无效
                     return $iatTime <= $cacheValue['valid_until'];
                 }
@@ -268,30 +268,38 @@ class JWT extends AbstractJWT
      * 把token加入到黑名单中
      *
      * @param Plain $token
+     * @param bool $addByCreateTokenMethod
      * @return bool
      */
-    public function addTokenBlack(Plain $token): bool
+    public function addTokenBlack(Plain $token, bool $addByCreateTokenMethod = false): bool
     {
-        $sceneConfig = $this->getSceneConfigByToken( $token );
+        $sceneConfig = $this->getSceneConfigByToken($token);
         $claims      = $token->claims();
         if ($sceneConfig['blacklist_enabled']) {
-            $cacheKey = $this->getCacheKey( $sceneConfig,$claims->get( RegisteredClaims::ID ) );
+            $iatTime  = TimeUtil::getCarbonTimeByTokenTime($claims->get(RegisteredClaims::ISSUED_AT));
+            $cacheKey = $this->getCacheKey($sceneConfig, $claims->get(RegisteredClaims::ID));
             if ($sceneConfig['login_type'] == JWTConstant::MPOP) {
                 $blacklistGracePeriod = $sceneConfig['blacklist_grace_period'];
-                $iatTime              = TimeUtil::getCarbonTimeByTokenTime( $claims->get( RegisteredClaims::ISSUED_AT ) );
-                $validUntil           = $iatTime->addSeconds( $blacklistGracePeriod )->getTimestamp();
+                $validUntil           = $iatTime->addSeconds($blacklistGracePeriod)->getTimestamp();
             } else {
                 /**
                  * 为什么要取当前的时间戳？
                  * 是为了在单点登录下，让这个时间前当前用户生成的token都失效，可以把这个用户在多个端都踢下线
                  */
-                $validUntil = TimeUtil::now()->subSeconds( 1 )->getTimestamp();
+                $validUntil = TimeUtil::now()->subSeconds(1)->getTimestamp();
+                // fix: SSO模式签发时间可能会跟黑名单缓存校验时间一致,因为创建token是先签发，后加入黑名单，所以就算获取当前时间-1秒，也还有可能一致
+                // 处理方式是：
+                // 如果是创建token，则使用token的签发时间-1秒为黑名单缓存校验时间
+                // 如果是刷新token，则使用当前时间-1秒为黑名单校验缓存时间(刷新token是先加入加入黑名单，后生成token)
+                if ($addByCreateTokenMethod) {
+                    $validUntil = $iatTime->subSeconds(1)->getTimestamp();
+                }
             }
 
             /**
              * 缓存时间取当前时间跟jwt过期时间的差值，单位秒
              */
-            $tokenCacheTime = $this->getTokenCacheTime( $claims );
+            $tokenCacheTime = $this->getTokenCacheTime($claims);
             if ($tokenCacheTime > 0) {
                 return $this->cache->tag('think-jwt')->set(
                     $cacheKey,
@@ -311,13 +319,13 @@ class JWT extends AbstractJWT
      */
     private function getTokenCacheTime(DataSet $claims): int
     {
-        $expTime = TimeUtil::getCarbonTimeByTokenTime( $claims->get( RegisteredClaims::EXPIRATION_TIME ) );
+        $expTime = TimeUtil::getCarbonTimeByTokenTime($claims->get(RegisteredClaims::EXPIRATION_TIME));
         $nowTime = TimeUtil::now();
         // 优化，如果当前时间大于过期时间，则证明这个jwt token已经失效了，没有必要缓存了
         // 如果当前时间小于等于过期时间，则缓存时间为两个的差值
-        if ($nowTime->lte( $expTime )) {
+        if ($nowTime->lte($expTime)) {
             // 加1秒防止临界时间缓存问题
-            return $expTime->diffInSeconds( $nowTime ) + 1;
+            return $expTime->diffInSeconds($nowTime) + 1;
         }
 
         return 0;
@@ -331,23 +339,23 @@ class JWT extends AbstractJWT
     public function refreshToken(string $token = null): Plain
     {
         if ($token == null) {
-            $token = JWTUtil::getToken( $this->request );
+            $token = JWTUtil::getToken($this->request);
         }
 
-        $token = $this->tokenToPlain( $token );
+        $token = $this->tokenToPlain($token);
 
         // TODO ....这里是否要做失败处理
-        $this->addTokenBlack( $token );
+        $this->addTokenBlack($token);
 
         $claims = $token->claims();
-        $data   = JWTUtil::claimsToArray( $claims );
-        $scene  = $this->getSceneByClaims( $claims );
-        unset( $data[RegisteredClaims::ISSUER] );
-        unset( $data[RegisteredClaims::EXPIRATION_TIME] );
-        unset( $data[RegisteredClaims::NOT_BEFORE] );
-        unset( $data[RegisteredClaims::ISSUED_AT] );
-        unset( $data[RegisteredClaims::ID] );
-        return $this->getToken( $scene,$data );
+        $data   = JWTUtil::claimsToArray($claims);
+        $scene  = $this->getSceneByClaims($claims);
+        unset($data[RegisteredClaims::ISSUER]);
+        unset($data[RegisteredClaims::EXPIRATION_TIME]);
+        unset($data[RegisteredClaims::NOT_BEFORE]);
+        unset($data[RegisteredClaims::ISSUED_AT]);
+        unset($data[RegisteredClaims::ID]);
+        return $this->getToken($scene, $data);
     }
 
     /**
@@ -359,11 +367,11 @@ class JWT extends AbstractJWT
     public function logout(string $token = null): bool
     {
         if ($token == null) {
-            $token = JWTUtil::getToken( $this->request );
+            $token = JWTUtil::getToken($this->request);
         }
 
-        $token = $this->tokenToPlain( $token );
-        return $this->addTokenBlack( $token );
+        $token = $this->tokenToPlain($token);
+        return $this->addTokenBlack($token);
     }
 
     /**
@@ -373,11 +381,11 @@ class JWT extends AbstractJWT
      */
     public function remove(string $token)
     {
-        $token       = $this->tokenToPlain( $token );
-        $sceneConfig = $this->getSceneConfigByToken( $token );
+        $token       = $this->tokenToPlain($token);
+        $sceneConfig = $this->getSceneConfigByToken($token);
         $claims      = $token->claims();
-        $cacheKey    = $this->getCacheKey( $sceneConfig,$claims->get( RegisteredClaims::ID ) );
-        return $this->cache->delete( $cacheKey );
+        $cacheKey    = $this->getCacheKey($sceneConfig, $claims->get(RegisteredClaims::ID));
+        return $this->cache->delete($cacheKey);
     }
 
     /**
@@ -398,14 +406,14 @@ class JWT extends AbstractJWT
     public function getTokenDynamicCacheTime(string $token = null): int
     {
         if ($token == null) {
-            throw new JWTException( "Missing token" );
+            throw new JWTException("Missing token");
         }
 
         $nowTime = TimeUtil::now();
-        $expTime = $this->tokenToPlain( $token )->claims()->get( RegisteredClaims::EXPIRATION_TIME,$nowTime );
+        $expTime = $this->tokenToPlain($token)->claims()->get(RegisteredClaims::EXPIRATION_TIME, $nowTime);
 
-        $expTime = TimeUtil::getCarbonTimeByTokenTime( $expTime );
-        return $nowTime->max( $expTime )->diffInSeconds();
+        $expTime = TimeUtil::getCarbonTimeByTokenTime($expTime);
+        return $nowTime->max($expTime)->diffInSeconds();
     }
 
     /**
@@ -417,22 +425,22 @@ class JWT extends AbstractJWT
     public function getClaimsByToken(string $token = null): array
     {
         if ($token == null) {
-            $token = JWTUtil::getToken( $this->request );
+            $token = JWTUtil::getToken($this->request);
         }
 
-        return $this->tokenToPlain( $token )->claims()->all();
+        return $this->tokenToPlain($token)->claims()->all();
     }
 
     public function tokenToPlain(string $token): Plain
     {
         if ($token == null) {
-            $token = JWTUtil::getToken( $this->request );
+            $token = JWTUtil::getToken($this->request);
         }
 
         try {
-            return JWTUtil::getParser()->parse( $token );
-        } catch ( \Exception $e ) {
-            throw new JWTException( 'Jwt token interpretation error. Please provide the correct jwt token and parse the error information: '.$e->getMessage(),400 );
+            return JWTUtil::getParser()->parse($token);
+        } catch (\Exception $e) {
+            throw new JWTException('Jwt token interpretation error. Please provide the correct jwt token and parse the error information: ' . $e->getMessage(), 400);
         }
     }
 
@@ -447,9 +455,9 @@ class JWT extends AbstractJWT
         return $this->scene;
     }
 
-    public function getCacheKey(array $sceneConfig,string $claimJti): string
+    public function getCacheKey(array $sceneConfig, string $claimJti): string
     {
-        return $sceneConfig["cache_prefix"].':'.$claimJti;
+        return $sceneConfig["cache_prefix"] . ':' . $claimJti;
     }
 
     /**
@@ -460,35 +468,35 @@ class JWT extends AbstractJWT
     public function getCacheTTL(string $token = null): int
     {
         if ($token == null) {
-            $token = JWTUtil::getToken( $this->request );
+            $token = JWTUtil::getToken($this->request);
         }
 
-        $token       = $this->tokenToPlain( $token );
-        $claimJti    = $token->claims()->get( RegisteredClaims::ID );
-        $sceneConfig = $this->getSceneConfigByToken( $token );
-        $cacheKey    = $this->getCacheKey( $sceneConfig,$claimJti );
-        $cacheValue  = $this->cache->get( $cacheKey );
+        $token       = $this->tokenToPlain($token);
+        $claimJti    = $token->claims()->get(RegisteredClaims::ID);
+        $sceneConfig = $this->getSceneConfigByToken($token);
+        $cacheKey    = $this->getCacheKey($sceneConfig, $claimJti);
+        $cacheValue  = $this->cache->get($cacheKey);
         return $cacheValue['valid_until'] - time();
     }
 
     public function getTTL(string $token): int
     {
         if ($token == null) {
-            $token = JWTUtil::getToken( $this->request );
+            $token = JWTUtil::getToken($this->request);
         }
 
-        $token       = JWTUtil::getParser()->parse( $token );
-        $sceneConfig = $this->getSceneConfigByToken( $token );
+        $token       = JWTUtil::getParser()->parse($token);
+        $sceneConfig = $this->getSceneConfigByToken($token);
         return (int)$sceneConfig['ttl'];
     }
 
     public function getSceneByToken(string $token): bool
     {
         if ($token == null) {
-            $token = JWTUtil::getToken( $this->request );
+            $token = JWTUtil::getToken($this->request);
         }
-        $token = $this->tokenToPlain( $token );
-        $scene = $this->getSceneByTokenPlain( $token );
+        $token = $this->tokenToPlain($token);
+        $scene = $this->getSceneByTokenPlain($token);
         return $this->jwtConfig[$scene];
     }
 
@@ -497,13 +505,13 @@ class JWT extends AbstractJWT
      */
     public function getUser()
     {
-        $token          = JWTUtil::getToken( $this->request );
-        $token          = $this->tokenToPlain( $token );
+        $token          = JWTUtil::getToken($this->request);
+        $token          = $this->tokenToPlain($token);
         $jwtSceneConfig = $this->getJwtSceneConfig();
-        if (is_callable( $jwtSceneConfig['user_model'] )) {
-            return $jwtSceneConfig['user_model']( $token->claims()->get( $jwtSceneConfig['sso_key'] ) ) ?? [];
+        if (is_callable($jwtSceneConfig['user_model'])) {
+            return $jwtSceneConfig['user_model']($token->claims()->get($jwtSceneConfig['sso_key'])) ?? [];
         }
-        throw new JWTException( 'jwt.user_model required',400 );
+        throw new JWTException('jwt.user_model required', 400);
     }
 
 
@@ -516,8 +524,8 @@ class JWT extends AbstractJWT
     {
         $jwtSceneConfig = $this->getJwtSceneConfig();
         $alg            = $jwtSceneConfig['alg'];
-        if (!array_key_exists( $alg,$this->supportAlgs )) {
-            throw new JWTException( 'The given supportAlgs could not be found',400 );
+        if (!array_key_exists($alg, $this->supportAlgs)) {
+            throw new JWTException('The given supportAlgs could not be found', 400);
         }
 
         return new $this->supportAlgs[$alg];
@@ -529,13 +537,13 @@ class JWT extends AbstractJWT
         if (!$this->isAsymmetric()) {
             $this->lcobucciJwtConfiguration = Configuration::forSymmetricSigner(
                 $this->getSigner(),
-                InMemory::base64Encoded( base64_encode( $jwtSceneConfig['secret'] ) )
+                InMemory::base64Encoded(base64_encode($jwtSceneConfig['secret']))
             );
         } else {
             $this->lcobucciJwtConfiguration = Configuration::forAsymmetricSigner(
                 $this->getSigner(),
-                InMemory::file( $jwtSceneConfig['keys']['private'],$jwtSceneConfig['keys']['passphrase'] ),
-                InMemory::file( $jwtSceneConfig['keys']['public'] )
+                InMemory::file($jwtSceneConfig['keys']['private'], $jwtSceneConfig['keys']['passphrase']),
+                InMemory::file($jwtSceneConfig['keys']['public'])
             );
         }
     }
@@ -545,8 +553,8 @@ class JWT extends AbstractJWT
      */
     protected function isAsymmetric(): bool
     {
-        return is_subclass_of( $this->getSigner(),Signer\Rsa::class )
-            || is_subclass_of( $this->getSigner(),Signer\Ecdsa::class );
+        return is_subclass_of($this->getSigner(), Signer\Rsa::class)
+            || is_subclass_of($this->getSigner(), Signer\Ecdsa::class);
     }
 
     /**
@@ -561,21 +569,21 @@ class JWT extends AbstractJWT
      * 'Lcobucci\JWT\Validation\Constraint\LooseValidAt'
      * @return array
      */
-    protected function validationConstraints(DataSet $claims,Configuration $configuration)
+    protected function validationConstraints(DataSet $claims, Configuration $configuration)
     {
-        $clock                 = SystemClock::fromUTC();
+        $clock                 = SystemClock::fromSystemTimezone();
         $validationConstraints = [
-            new IdentifiedBy( $claims->get( RegisteredClaims::ID ) ),
-            new IssuedBy( $claims->get( RegisteredClaims::ISSUER ) ),
-            new LooseValidAt( $clock ),
-            new StrictValidAt( $clock ),
-            new SignedWith( $configuration->signer(),$configuration->verificationKey() )
+            new IdentifiedBy($claims->get(RegisteredClaims::ID)),
+            new IssuedBy($claims->get(RegisteredClaims::ISSUER)),
+            new LooseValidAt($clock),
+            new StrictValidAt($clock),
+            new SignedWith($configuration->signer(), $configuration->verificationKey())
         ];
-        if ($claims->get( RegisteredClaims::AUDIENCE ) != null) {
-            $validationConstraints[] = new PermittedFor( ...$claims->get( RegisteredClaims::AUDIENCE ) );
+        if ($claims->get(RegisteredClaims::AUDIENCE) != null) {
+            $validationConstraints[] = new PermittedFor(...$claims->get(RegisteredClaims::AUDIENCE));
         }
-        if ($claims->get( RegisteredClaims::SUBJECT ) != null) {
-            $validationConstraints[] = new RelatedTo( $claims->get( RegisteredClaims::SUBJECT ) );
+        if ($claims->get(RegisteredClaims::SUBJECT) != null) {
+            $validationConstraints[] = new RelatedTo($claims->get(RegisteredClaims::SUBJECT));
         }
         return $validationConstraints;
     }
@@ -588,13 +596,13 @@ class JWT extends AbstractJWT
      */
     protected function getSceneConfigByToken(Plain $token): array
     {
-        $scene = $this->getSceneByTokenPlain( $token );
+        $scene = $this->getSceneByTokenPlain($token);
         return $this->jwtConfig[$scene];
     }
 
     protected function getSceneByClaims(DataSet $claims)
     {
-        return $claims->get( $this->jwtClaimScene,$this->getScene() );
+        return $claims->get($this->jwtClaimScene, $this->getScene());
     }
 
     /**
