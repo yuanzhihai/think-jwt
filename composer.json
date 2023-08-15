@@ -35,5 +35,8 @@
         "jwt": "src/config/jwt.php"
       }
     }
+  },
+  "scripts": {
+    "test": "phpunit --prepend tests/bootstrap.php  -c phpunit.xml --colors=always"
   }
 }
