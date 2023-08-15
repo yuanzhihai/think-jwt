@@ -15,9 +15,17 @@
     "lcobucci/clock": "^3.0",
     "nesbot/carbon": "^2.0"
   },
+  "require-dev": {
+    "phpunit/phpunit": "^9.5"
+  },
   "autoload": {
     "psr-4": {
       "yzh52521\\Jwt\\": "src"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "yzh52521\\Jwt\\Tests\\": "tests/"
     }
   },
   "minimum-stability": "dev",
@@ -27,5 +35,10 @@
         "jwt": "src/config/jwt.php"
       }
     }
+  },
+  "scripts": {
+    "test": "phpunit --prepend tests/bootstrap.php -c phpunit.xml --colors=always",
+    "cs-fix": "php-cs-fixer fix $1",
+    "analyse": "phpstan analyse --memory-limit 300M -l 0 -c phpstan.neon $1"
   }
 }
