@@ -245,7 +245,7 @@ class JWT extends AbstractJWT
             $cacheKey   = $this->getCacheKey($sceneConfig, $claims->get(RegisteredClaims::ID));
             $cacheValue = $this->cache->get($cacheKey);
             if ($cacheValue == null) {
-                return true;
+                return $sceneConfig['login_type'] == JWTConstant::SSO;
             }
             if ($sceneConfig['login_type'] == JWTConstant::MPOP) {
                 return !empty($cacheValue['valid_until']) && !TimeUtil::isFuture($cacheValue['valid_until']);
